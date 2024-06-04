@@ -1,0 +1,5 @@
+curl -X POST http://localhost:8080 -d "Hello, http!"
+echo "Hello, TCP!" | nc -w 0 localhost 8080
+echo "Hello, UDP!" | nc -u -w 0 localhost 8080
+
+

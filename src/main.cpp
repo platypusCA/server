@@ -6,8 +6,8 @@ int main(int argc, char* argv[]) {
     try {
         boost::program_options::options_description desc{"Options"};
         desc.add_options()
-            ("help,h", "Help screen")
-            ("port,p", boost::program_options::value<int>()->default_value(8080), "Listening port");
+                ("help,h", "Help screen")
+                ("port,p", boost::program_options::value<int>()->default_value(8080), "Listening port");
 
         boost::program_options::variables_map vm;
         boost::program_options::store(parse_command_line(argc, argv, desc), vm);
@@ -19,6 +19,10 @@ int main(int argc, char* argv[]) {
         }
 
         int port = vm["port"].as<int>();
+
+        // Log the parameters the server was launched with
+        std::cout << "Server starting with the following parameters:" << std::endl;
+        std::cout << "Port: " << port << std::endl;
 
         boost::asio::io_context io_context;
         server s(io_context, port);

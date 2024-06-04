@@ -4,15 +4,16 @@
 #include <boost/asio/spawn.hpp>
 
 server::server(boost::asio::io_context& io_context, int port)
-    : io_context_(io_context),
-      acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
-      udp_socket_(io_context, udp::endpoint(udp::v4(), port)),
-      ssl_context_(boost::asio::ssl::context::sslv23)
+        : io_context_(io_context),
+          acceptor_(io_context, tcp::endpoint(tcp::v4(), port)),
+          udp_socket_(io_context, udp::endpoint(udp::v4(), port)),
+          ssl_context_(boost::asio::ssl::context::sslv23)
 {
+    // SSL context configuration
     ssl_context_.set_options(
-        boost::asio::ssl::context::default_workarounds |
-        boost::asio::ssl::context::no_sslv2 |
-        boost::asio::ssl::context::single_dh_use);
+            boost::asio::ssl::context::default_workarounds |
+            boost::asio::ssl::context::no_sslv2 |
+            boost::asio::ssl::context::single_dh_use);
 
     do_accept();
     boost::asio::spawn(io_context_, [this](boost::asio::yield_context yield) {
@@ -28,7 +29,7 @@ void server::do_accept() {
             acceptor_.async_accept(socket, yield[ec]);
             if (!ec) {
                 boost::asio::spawn(io_context_, [this, socket = std::move(socket)](boost::asio::yield_context yield) mutable {
-                    do_session(std::move(socket), yield);
+                    do_read(std::move(socket), yield);
                 });
             }
         }
@@ -49,6 +50,12 @@ void server::do_read(tcp::socket socket, boost::asio::yield_context yield) {
             }
 
             std::cout << "TCP: " << std::string(buf.data(), length) << std::endl;
+
+            // Echo the message back to the sender
+            boost::asio::async_write(socket, boost::asio::buffer(buf, length), yield[ec]);
+            if (ec) {
+                throw boost::system::system_error(ec);
+            }
         }
     } catch (const std::exception& e) {
         std::cerr << "Error in TCP: " << e.what() << std::endl;
@@ -69,6 +76,12 @@ void server::do_read_ssl(boost::asio::ssl::stream<tcp::socket> stream, boost::as
                 throw boost::system::system_error(ec);
             }
             std::cout << "TCP/SSL: " << std::string(buf.data(), length) << std::endl;
+
+            // Echo the message back to the sender
+            boost::asio::async_write(stream, boost::asio::buffer(buf, length), yield[ec]);
+            if (ec) {
+                throw boost::system::system_error(ec);
+            }
         }
     } catch (const std::exception& e) {
         std::cerr << "Error in TCP/SSL: " << e.what() << std::endl;
@@ -80,9 +93,19 @@ void server::do_read_udp(boost::asio::yield_context yield) {
         std::array<char, 1024> buf{};
         udp::endpoint sender_endpoint;
         boost::system::error_code ec;
+
+        // Receive data from the client
         std::size_t length = udp_socket_.async_receive_from(boost::asio::buffer(buf), sender_endpoint, yield[ec]);
         if (!ec) {
             std::cout << "UDP: " << std::string(buf.data(), length) << std::endl;
+
+            // Echo the message back to the sender
+            udp_socket_.async_send_to(boost::asio::buffer(buf, length), sender_endpoint, yield[ec]);
+            if (ec) {
+                std::cerr << "Error sending UDP: " << ec.message() << std::endl;
+            }
+        } else {
+            std::cerr << "Error receiving UDP: " << ec.message() << std::endl;
         }
     }
 }
@@ -117,4 +140,3 @@ void server::do_session(tcp::socket socket, boost::asio::yield_context yield) {
         std::cerr << "Error in session: " << e.what() << std::endl;
     }
 }
-
