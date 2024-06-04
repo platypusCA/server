@@ -9,7 +9,6 @@
 
 namespace beast = boost::beast;
 namespace http = beast::http;
-namespace websocket = beast::websocket;
 using tcp = boost::asio::ip::tcp;
 using udp = boost::asio::ip::udp;
 
@@ -22,7 +21,6 @@ private:
     void do_read(tcp::socket socket, boost::asio::yield_context yield);
     void do_read_ssl(boost::asio::ssl::stream<tcp::socket> stream, boost::asio::yield_context yield);
     void do_read_udp(boost::asio::yield_context yield);
-    void do_session(tcp::socket socket, boost::asio::yield_context yield);
 
     boost::asio::io_context& io_context_;
     tcp::acceptor acceptor_;
