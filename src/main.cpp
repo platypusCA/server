@@ -7,7 +7,9 @@ int main(int argc, char* argv[]) {
         boost::program_options::options_description desc{"Options"};
         desc.add_options()
                 ("help,h", "Help screen")
-                ("port,p", boost::program_options::value<int>()->default_value(8080), "Listening port");
+                ("http_port", boost::program_options::value<int>()->default_value(8080), "HTTP port")
+                ("tcp_port", boost::program_options::value<int>()->default_value(8081), "TCP port")
+                ("udp_port", boost::program_options::value<int>()->default_value(8082), "UDP port");
 
         boost::program_options::variables_map vm;
         boost::program_options::store(parse_command_line(argc, argv, desc), vm);
@@ -18,17 +20,19 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
-        int port = vm["port"].as<int>();
+        int http_port = vm["http_port"].as<int>();
+        int tcp_port = vm["tcp_port"].as<int>();
+        int udp_port = vm["udp_port"].as<int>();
 
-        // Log the parameters the server was launched with
         std::cout << "Server starting with the following parameters:" << std::endl;
-        std::cout << "Port: " << port << std::endl;
+        std::cout << "HTTP Port: " << http_port << std::endl;
+        std::cout << "TCP Port: " << tcp_port << std::endl;
+        std::cout << "UDP Port: " << udp_port << std::endl;
 
         boost::asio::io_context io_context;
-        server s(io_context, port);
+        server s(io_context, http_port, tcp_port, udp_port);
         io_context.run();
-    }
-    catch (const std::exception& ex) {
+    } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << std::endl;
     }
 

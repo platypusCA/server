@@ -1,5 +1,5 @@
-curl -X POST http://localhost:8080 -d "Hello, http!"
-echo "Hello, TCP!" | nc -w 0 localhost 8080
-echo "Hello, UDP!" | nc -u -w 0 localhost 8080
-
+./server --http_port 8080 --tcp_port 8081 --udp_port 8082
+echo -n "This is a test message over TCP" | nc localhost 8081
+echo -n "This is a test message over UDP" | nc -u localhost 8082
+curl -X POST -H "Content-Type: text/plain" -d "This is a test message over HTTP" http://localhost:8080
 

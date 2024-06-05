@@ -14,18 +14,19 @@ using udp = boost::asio::ip::udp;
 
 class server {
 public:
-    server(boost::asio::io_context& io_context, int port);
+    server(boost::asio::io_context& io_context, int http_port, int tcp_port, int udp_port);
 
 private:
-    void do_accept();
-    void do_read(tcp::socket socket, boost::asio::yield_context yield);
-    void do_read_ssl(boost::asio::ssl::stream<tcp::socket> stream, boost::asio::yield_context yield);
+    void do_accept_http();
+    void do_accept_tcp();
+    void handle_tcp(tcp::socket socket, boost::asio::yield_context yield);
     void do_read_udp(boost::asio::yield_context yield);
+    void handle_http(tcp::socket socket, boost::asio::yield_context yield);
 
     boost::asio::io_context& io_context_;
-    tcp::acceptor acceptor_;
+    tcp::acceptor http_acceptor_;
+    tcp::acceptor tcp_acceptor_;
     udp::socket udp_socket_;
-    boost::asio::ssl::context ssl_context_;
 };
 
 #endif // SERVER_H
