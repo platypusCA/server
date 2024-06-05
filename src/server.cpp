@@ -44,8 +44,8 @@ void server::do_read(tcp::socket socket, boost::asio::yield_context yield) {
             boost::system::error_code ec;
 
             http::async_read(socket, buffer, req, yield[ec]);
-            if (ec == boost::asio::error::eof) {
-                break;
+            if (ec == boost::asio::error::eof || ec == beast::http::error::end_of_stream) {
+                break; // Gracefully handle the end of stream
             } else if (ec) {
                 throw boost::system::system_error(ec);
             }
@@ -63,7 +63,13 @@ void server::do_read(tcp::socket socket, boost::asio::yield_context yield) {
             if (ec) {
                 throw boost::system::system_error(ec);
             }
+
+            if (!res.keep_alive()) {
+                break; // Close the socket if keep-alive is not requested
+            }
         }
+
+        socket.shutdown(tcp::socket::shutdown_send);
     } catch (const std::exception& e) {
         std::cerr << "Error in TCP: " << e.what() << std::endl;
     }
@@ -78,8 +84,8 @@ void server::do_read_ssl(boost::asio::ssl::stream<tcp::socket> stream, boost::as
             boost::system::error_code ec;
 
             http::async_read(stream, buffer, req, yield[ec]);
-            if (ec == boost::asio::error::eof) {
-                break;
+            if (ec == boost::asio::error::eof || ec == beast::http::error::end_of_stream) {
+                break; // Gracefully handle the end of stream
             } else if (ec) {
                 throw boost::system::system_error(ec);
             }
@@ -97,7 +103,13 @@ void server::do_read_ssl(boost::asio::ssl::stream<tcp::socket> stream, boost::as
             if (ec) {
                 throw boost::system::system_error(ec);
             }
+
+            if (!res.keep_alive()) {
+                break; // Close the socket if keep-alive is not requested
+            }
         }
+
+        stream.lowest_layer().shutdown(tcp::socket::shutdown_send);
     } catch (const std::exception& e) {
         std::cerr << "Error in TCP/SSL: " << e.what() << std::endl;
     }
