@@ -65,7 +65,6 @@ void server::handle_tcp(tcp::socket socket, boost::asio::yield_context yield) {
                 throw boost::system::system_error(ec);
             }
         }
-        socket.shutdown(tcp::socket::shutdown_send, ec);
     } catch (const std::exception& e) {
         std::cerr << "Error in TCP: " << e.what() << std::endl;
     }
